@@ -1,4 +1,4 @@
-package com.zsp.ratelimiter.alg;
+package com.zsp.ratelimiter.exception;
 
 /**
  * Created by zhangshaopeng on 2021/3/9.

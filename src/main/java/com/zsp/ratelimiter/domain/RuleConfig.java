@@ -1,4 +1,4 @@
-package com.zsp.ratelimiter.rule;
+package com.zsp.ratelimiter.domain;
 
 import java.util.List;
 

@@ -1,0 +1,13 @@
+package com.zsp.ratelimiter.parser;
+
+import com.zsp.ratelimiter.domain.RuleConfig;
+
+import java.io.InputStream;
+
+/**
+ * Created by zhangshaopeng on 2021/3/9.
+ */
+public interface RuleConfigParser {
+
+    RuleConfig parse(InputStream in);
+}

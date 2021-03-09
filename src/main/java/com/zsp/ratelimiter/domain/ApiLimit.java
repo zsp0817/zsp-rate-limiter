@@ -1,4 +1,4 @@
-package com.zsp.ratelimiter.rule;
+package com.zsp.ratelimiter.domain;
 
 /**
  * Created by zhangshaopeng on 2021/3/9.

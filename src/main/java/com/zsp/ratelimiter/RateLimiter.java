@@ -1,16 +1,17 @@
 package com.zsp.ratelimiter;
 
-import com.zsp.ratelimiter.alg.InternalErrorException;
+import com.zsp.ratelimiter.alg.FixedTimeWinRateLimitAlg;
 import com.zsp.ratelimiter.alg.RateLimitAlg;
-import com.zsp.ratelimiter.rule.ApiLimit;
+import com.zsp.ratelimiter.datasource.FileRuleConfigSource;
+import com.zsp.ratelimiter.datasource.RuleConfigSource;
+import com.zsp.ratelimiter.domain.ApiLimit;
+import com.zsp.ratelimiter.domain.RuleConfig;
+import com.zsp.ratelimiter.exception.InternalErrorException;
+import com.zsp.ratelimiter.rule.MapRateLimitRule;
 import com.zsp.ratelimiter.rule.RateLimitRule;
-import com.zsp.ratelimiter.rule.RuleConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -23,28 +24,17 @@ public class RateLimiter {
     private RateLimitRule rule;
 
     public RateLimiter() {
-        InputStream in = null;
-        RuleConfig ruleConfig = null;
-
-        try {
-            in = this.getClass().getResourceAsStream("/ratelimiter-rule.yaml");
-            if (in != null) {
-                Yaml yaml = new Yaml();
-                ruleConfig = yaml.loadAs(in, RuleConfig.class);
-            }
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    log.error("close file error:{}", e);
-                }
-            }
-        }
-
-        this.rule = new RateLimitRule(ruleConfig);
+        RuleConfigSource configSource = new FileRuleConfigSource();
+        RuleConfig ruleConfig = configSource.load();
+        this.rule = new MapRateLimitRule(ruleConfig);
     }
 
+    /**
+     * @param appId
+     * @param api
+     * @return
+     * @throws InternalErrorException
+     */
     public boolean limit(String appId, String api) throws InternalErrorException {
         ApiLimit apiLimit = rule.getLimit(appId, api);
         if (apiLimit == null) {
@@ -54,7 +44,7 @@ public class RateLimiter {
         String counterKey = appId + ":" + apiLimit.getApi();
         RateLimitAlg rateLimitCounter = counters.get(counterKey);
         if (rateLimitCounter == null) {
-            RateLimitAlg newRateLimitCounter = new RateLimitAlg(apiLimit.getLimit(), apiLimit.getUnit());
+            RateLimitAlg newRateLimitCounter = new FixedTimeWinRateLimitAlg(apiLimit.getLimit(), apiLimit.getUnit());
             rateLimitCounter = counters.putIfAbsent(counterKey, newRateLimitCounter);
             if (rateLimitCounter == null) {
                 rateLimitCounter = newRateLimitCounter;
